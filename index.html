@@ -13,88 +13,97 @@
 </head>
 <body>
 
-<button onclick="start()">Start</button>
+<button onclick="start()" id="start-button">Start</button>
 <div id='map'></div>
 
 <script>
-var flightDirections = ['S', 'W1', 'N', 'W2'];
-var zoom = 15.1;
-var flightParams = {
-    horizontal: {
-        is: ['W1', 'W2'],
-        length: 0.4,
-        speed: 3
-    },
-    vertical: {
-        is: ['S', 'N'],
-        length: 3,
-        speed: 3
-    }
-};
-
-var currentFlight = 'W2';
-var map = new mapboxgl.Map({
-    container: 'map',
-    style: 'https://maps.tilehosting.com/styles/streets/style.json?key=vzxae75ljrA4VFFb86xW',
-    center: [32.393377385004896, 52.51161410192503],
-    zoom: zoom
-});
-
-
-
-function getTarget() {
-    var center = map.getCenter();
-
-    var index = (flightDirections.findIndex(function(w) {return w === currentFlight}) + 1) % 4;
-    var target = flightDirections[index];
-    var isHorizontal = flightParams.horizontal.is.includes(target);
-
-    currentFlight = target;
-
-    if (isHorizontal) {
-        return {
-            zoom: zoom,
-            center: [center.lng - flightParams.horizontal.length, center.lat],
-            speed: flightParams.horizontal.speed
+    var flightDirections = ['S', 'W1', 'N', 'W2'];
+    var zoom = 15.1;
+    var flightParams = {
+        horizontal: {
+            is: ['W1', 'W2'],
+            length: 0.4,
+            speed: 3
+        },
+        vertical: {
+            is: ['S', 'N'],
+            length: 3,
+            speed: 3
         }
-    } else {
-        return {
-            zoom: zoom,
-            center: target === 'S' ? [center.lng, center.lat - flightParams.vertical.length] : [center.lng, center.lat + flightParams.vertical.length],
-            speed: flightParams.vertical.speed
-        }
-    }
-}
+    };
+    var playing = false;
 
-function flyToNextWaypoint() {
-    var target = getTarget();
-    map.flyTo({
-        center: target.center,
-        zoom: target.zoom,
-        bearing: 0,
-        pitch: 50,
-
-        // These options control the flight curve, making it move
-        // slowly and zoom out almost completely before starting
-        // to pan.
-        speed: target.speed, // make the flying slow
-        curve: 1, // change the speed at which it zooms out
-
-        // This can be any easing function: it takes a number between
-        // 0 and 1 and returns another number between 0 and 1.
-        easing: function (t) {
-            return t;
-        }
+    var currentFlight = 'W2';
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'https://maps.tilehosting.com/styles/streets/style.json?key=vzxae75ljrA4VFFb86xW',
+        center: [32.393377385004896, 52.51161410192503],
+        zoom: zoom
     });
-
-}
-
-function start() {
-    flyToNextWaypoint();
     map.on('moveend', function() {
+        if(!playing) return;
+
         flyToNextWaypoint();
     });
-}
+
+    function getTarget() {
+        var center = map.getCenter();
+
+        var index = (flightDirections.findIndex(function(w) {return w === currentFlight}) + 1) % 4;
+        var target = flightDirections[index];
+        var isHorizontal = flightParams.horizontal.is.includes(target);
+
+        currentFlight = target;
+
+        if (isHorizontal) {
+            return {
+                zoom: zoom,
+                center: [center.lng - flightParams.horizontal.length, center.lat],
+                speed: flightParams.horizontal.speed
+            }
+        } else {
+            return {
+                zoom: zoom,
+                center: target === 'S' ? [center.lng, center.lat - flightParams.vertical.length] : [center.lng, center.lat + flightParams.vertical.length],
+                speed: flightParams.vertical.speed
+            }
+        }
+    }
+
+    function flyToNextWaypoint() {
+        var target = getTarget();
+        map.flyTo({
+            center: target.center,
+            zoom: target.zoom,
+            bearing: 0,
+            pitch: 50,
+
+            // These options control the flight curve, making it move
+            // slowly and zoom out almost completely before starting
+            // to pan.
+            speed: target.speed, // make the flying slow
+            curve: 1, // change the speed at which it zooms out
+
+            // This can be any easing function: it takes a number between
+            // 0 and 1 and returns another number between 0 and 1.
+            easing: function (t) {
+                return t;
+            }
+        });
+
+    }
+
+    function start() {
+        playing = !playing;
+        document.getElementById("start-button").innerText = playing ? "Pause" : "Start";
+
+        if(!playing) {
+            map.stop();
+            return;
+        }
+
+        flyToNextWaypoint();
+    }
 
 </script>
 
