@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>ArrayBuffer memory usage test</title>
+</head>
+<body>
+
+<button onclick="start()" id="start-button">Start</button>
+<button onclick="stop()" id="stop-button">Stop</button>
+<script>
+    var buffers;
+    var workers = [new Worker('worker.js'), new Worker('worker.js'), new Worker('worker.js'), new Worker('worker.js')];
+    workers.forEach(worker => worker.onmessage = function(message) {
+        buffers = message.data.data;
+    });
+
+    var interval;
+    function start() {
+        interval = setInterval(function(){
+            workers.forEach(worker => worker.postMessage("foo"));
+        }, 20);
+    }
+
+    function stop() {
+        clearInterval(interval);
+    }
+</script>
+
+</body>
+</html>
